@@ -68,6 +68,7 @@ def build_query_from_problem_analysis(analysis: dict[str, Any]) -> str:
         " ".join(str(tag) for tag in analysis.get("algorithm_tags", [])),
         str(analysis.get("constraints", "")),
         str(analysis.get("corner_cases", "")),
+        "TestDataSpec generator.py large scale test data generation counterexample stress boundary",
     ]
     return "\n".join(part for part in parts if part.strip())
 

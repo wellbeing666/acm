@@ -10,8 +10,10 @@ from src.llm_parser import (
     analyze_problem_statement,
 )
 from src.rag_store import RAGError, build_query_from_problem_analysis, retrieve_knowledge
-from src.test_case_generator import generate_test_cases
 from src.test_plan_generator import generate_test_plan
+from generator.generator_code_builder import build_generator_code
+from generator.test_spec_generator import generate_test_data_spec
+from runner.generator_runner import GeneratorRunnerError, run_generator
 
 
 def read_problem_statement() -> str:
@@ -109,9 +111,9 @@ def main() -> None:
     print("\nTest plan JSON:")
     print(json.dumps(test_plan, ensure_ascii=False, indent=2))
 
-    print("\nGenerating concrete test cases with the model...")
+    print("\nGenerating TestDataSpec with the model...")
     try:
-        test_cases = generate_test_cases(analysis, test_plan)
+        test_data_spec = generate_test_data_spec(analysis, test_plan, knowledge_chunks)
     except MissingDependencyError as exc:
         print(f"Dependency error: {exc}")
         return
@@ -131,8 +133,43 @@ def main() -> None:
         print(f"Schema validation error: {exc}")
         return
 
-    print("\nConcrete test cases JSON:")
-    print(json.dumps(test_cases, ensure_ascii=False, indent=2))
+    print("\nTestDataSpec JSON:")
+    print(json.dumps(test_data_spec, ensure_ascii=False, indent=2))
+
+    print("\nBuilding generator.py with the model...")
+    try:
+        generator_path = build_generator_code(analysis, test_data_spec)
+    except MissingDependencyError as exc:
+        print(f"Dependency error: {exc}")
+        return
+    except MissingAPIKeyError as exc:
+        print(f"Configuration error: {exc}")
+        return
+    except ModelRequestError as exc:
+        print(f"Model request error: {exc}")
+        return
+    except ModelJSONParseError as exc:
+        print(f"JSON parse error: {exc}")
+        if exc.raw_output:
+            print("\nRaw model output:")
+            print(exc.raw_output)
+        return
+    except ModelSchemaError as exc:
+        print(f"Schema validation error: {exc}")
+        return
+
+    print(f"\nGenerator written to: {generator_path}")
+
+    print("\nRunning generator.py...")
+    try:
+        result = run_generator(generator_path)
+    except GeneratorRunnerError as exc:
+        print(f"Generator error: {exc}")
+        return
+
+    print(f"\nGenerated {len(result.input_files)} input files:")
+    for path in result.input_files:
+        print(path)
 
 
 if __name__ == "__main__":

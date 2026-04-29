@@ -15,6 +15,7 @@ algorithm_tags: [rag, test_generation, acm]
 - `00_general_testing.md`
 - 与 `problem_type` 匹配的专题文件
 - 与 `algorithm_tags` 匹配的专题文件
+- 若需要大规模数据，召回 `09_generator_driven_testing.md`
 - 若题目混合多种算法，召回多个专题并让模型合并策略
 
 ## 边界情况
@@ -36,3 +37,5 @@ RAG 生成测试时不要只取随机数据。应要求模型至少生成：
 - 无解测试
 - 多解或多最优解测试
 - 针对错误贪心、错误边界、整数溢出、未初始化、多组数据污染的反例
+
+对于大规模测试，RAG 应指导模型输出 TestDataSpec 或 generator.py，而不是直接输出完整 input 数据。

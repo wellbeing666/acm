@@ -13,3 +13,8 @@ venv/
 .ruff_cache/
 
 data/chroma/
+data/generated/generator.py
+test_data/
+tests/runtime/generator.py
+tests/runtime/test_data/
+tests/runtime/manual_data/

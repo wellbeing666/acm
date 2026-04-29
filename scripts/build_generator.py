@@ -11,6 +11,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from config import GENERATED_GENERATOR_PATH
+from generator.generator_code_builder import build_generator_code
 from src.llm_parser import (
     MissingAPIKeyError,
     MissingDependencyError,
@@ -18,26 +20,20 @@ from src.llm_parser import (
     ModelRequestError,
     ModelSchemaError,
 )
-from src.test_case_generator import generate_test_cases
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate concrete ACM test cases from problem_info and test_plan.")
-    parser.add_argument("--problem-info", required=True, help="Path to a JSON file containing problem_info.")
-    parser.add_argument("--test-plan", required=True, help="Path to a JSON file containing test_plan.")
+    parser = argparse.ArgumentParser(description="Build generator.py from problem_info and TestDataSpec.")
+    parser.add_argument("--problem-info", required=True, help="Path to problem_info JSON.")
+    parser.add_argument("--test-data-spec", required=True, help="Path to TestDataSpec JSON.")
+    parser.add_argument("--output", default=str(GENERATED_GENERATOR_PATH), help="Output generator.py path.")
     args = parser.parse_args()
 
     try:
         problem_info = read_json_object(Path(args.problem_info), "problem_info")
-        test_plan = read_json(Path(args.test_plan))
-        test_cases = generate_test_cases(problem_info, test_plan)
-    except OSError as exc:
-        print(f"File error: {exc}")
-        return
-    except json.JSONDecodeError as exc:
-        print(f"JSON file parse error: {exc}")
-        return
-    except ValueError as exc:
+        test_data_spec = read_json_object(Path(args.test_data_spec), "test_data_spec")
+        output_path = build_generator_code(problem_info, test_data_spec, Path(args.output))
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"Input error: {exc}")
         return
     except MissingDependencyError as exc:
@@ -59,15 +55,11 @@ def main() -> None:
         print(f"Schema validation error: {exc}")
         return
 
-    print(json.dumps(test_cases, ensure_ascii=False, indent=2))
-
-
-def read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+    print(f"Generator written to: {output_path}")
 
 
 def read_json_object(path: Path, name: str) -> dict[str, Any]:
-    data = read_json(path)
+    data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(f"{name} must be a JSON object.")
     return data
