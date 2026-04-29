@@ -13,7 +13,7 @@ from src.rag_store import RAGError, build_query_from_problem_analysis, retrieve_
 from src.test_plan_generator import generate_test_plan
 from generator.generator_code_builder import build_generator_code
 from generator.test_spec_generator import generate_test_data_spec
-from agent.generator_repair_agent import repair_and_run_generator
+from agent.generator_repair_agent import repair_and_run_generator_with_trace
 from runner.generator_runner import GeneratorRunnerError
 
 
@@ -163,7 +163,8 @@ def main() -> None:
 
     print("\nRunning generator.py with repair agent...")
     try:
-        result = repair_and_run_generator(analysis, test_data_spec, generator_path)
+        agent_result = repair_and_run_generator_with_trace(analysis, test_data_spec, generator_path)
+        result = agent_result.run_result
     except MissingDependencyError as exc:
         print(f"Dependency error: {exc}")
         return
@@ -189,6 +190,8 @@ def main() -> None:
     print(f"\nGenerated {len(result.input_files)} input files:")
     for path in result.input_files:
         print(path)
+    if agent_result.trace_path:
+        print(f"\nAgent trace: {agent_result.trace_path}")
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from agent.generator_repair_agent import repair_and_run_generator
+from agent.generator_repair_agent import repair_and_run_generator_with_trace
 from config import GENERATED_GENERATOR_PATH, GENERATOR_REPAIR_MAX_ATTEMPTS, TEST_DATA_DIR
 from runner.generator_runner import GeneratorRunnerError
 from src.llm_parser import (
@@ -40,13 +40,14 @@ def main() -> None:
     try:
         problem_info = read_json_object(Path(args.problem_info), "problem_info")
         test_data_spec = read_json_object(Path(args.test_data_spec), "test_data_spec")
-        result = repair_and_run_generator(
+        agent_result = repair_and_run_generator_with_trace(
             problem_info=problem_info,
             test_data_spec=test_data_spec,
             generator_path=Path(args.generator),
             output_dir=Path(args.output_dir),
             max_attempts=args.max_attempts,
         )
+        result = agent_result.run_result
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"Input error: {exc}")
         return
@@ -75,6 +76,8 @@ def main() -> None:
     print(f"Generated {len(result.input_files)} input files in {result.output_dir}:")
     for path in result.input_files:
         print(path)
+    if agent_result.trace_path:
+        print(f"\nAgent trace: {agent_result.trace_path}")
 
 
 def read_json_object(path: Path, name: str) -> dict[str, Any]:
