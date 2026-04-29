@@ -13,7 +13,8 @@ from src.rag_store import RAGError, build_query_from_problem_analysis, retrieve_
 from src.test_plan_generator import generate_test_plan
 from generator.generator_code_builder import build_generator_code
 from generator.test_spec_generator import generate_test_data_spec
-from runner.generator_runner import GeneratorRunnerError, run_generator
+from agent.generator_repair_agent import repair_and_run_generator
+from runner.generator_runner import GeneratorRunnerError
 
 
 def read_problem_statement() -> str:
@@ -160,9 +161,27 @@ def main() -> None:
 
     print(f"\nGenerator written to: {generator_path}")
 
-    print("\nRunning generator.py...")
+    print("\nRunning generator.py with repair agent...")
     try:
-        result = run_generator(generator_path)
+        result = repair_and_run_generator(analysis, test_data_spec, generator_path)
+    except MissingDependencyError as exc:
+        print(f"Dependency error: {exc}")
+        return
+    except MissingAPIKeyError as exc:
+        print(f"Configuration error: {exc}")
+        return
+    except ModelRequestError as exc:
+        print(f"Model request error: {exc}")
+        return
+    except ModelJSONParseError as exc:
+        print(f"JSON parse error: {exc}")
+        if exc.raw_output:
+            print("\nRaw model output:")
+            print(exc.raw_output)
+        return
+    except ModelSchemaError as exc:
+        print(f"Schema validation error: {exc}")
+        return
     except GeneratorRunnerError as exc:
         print(f"Generator error: {exc}")
         return
