@@ -15,6 +15,7 @@ venv/
 data/chroma/
 data/agent_traces/
 data/generated/generator.py
+data/generated/runs/
 test_data/
 tests/runtime/generator.py
 tests/runtime/test_data/
